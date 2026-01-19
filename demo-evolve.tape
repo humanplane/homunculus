@@ -1,16 +1,16 @@
-# Homunculus init demo
-Output demo.gif
+# Homunculus evolve demo
+Output demo-evolve.gif
 
 Set Shell "bash"
 Set FontSize 14
 Set Width 440
-Set Height 420
+Set Height 480
 Set Theme "Catppuccin Mocha"
 Set Padding 30
 Set TypingSpeed 0
 Set Framerate 30
 
-Type "./scripts/sim-init.sh"
+Type "./scripts/sim-evolve.sh"
 Enter
 
-Sleep 32s
+Sleep 28s
