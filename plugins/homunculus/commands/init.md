@@ -75,7 +75,8 @@ Save `.claude/homunculus/state.json`:
   "homunculus": {
     "evolved": [],
     "awakened": "[ISO TIMESTAMP]"
-  }
+  },
+  "capabilities": {}
 }
 ```
 

@@ -117,9 +117,43 @@ Don't just report. Offer something:
 - "I could [SPECIFIC THING BASED ON WHAT YOU SEE]?"
 - "Want to talk through [THING THEY SEEM STUCK ON]?"
 
+## Capability Health
+
+If there are evolved capabilities, include a brief health check:
+
+```bash
+# Check for capabilities in state
+cat .claude/homunculus/state.json | grep -A50 '"capabilities"'
+```
+
+**If capabilities exist with usage data:**
+
+Show a quick summary:
+
+```
+Powers:
+- [name]: [effectiveness]% ([uses] uses) [STATUS]
+- [name]: [effectiveness]% ([uses] uses) [STATUS]
+```
+
+Status indicators:
+- No status if healthy (>70% or <5 uses)
+- `needs attention` if effectiveness <50% with 5+ uses
+- `improving` if there's a pending improvement
+- `v[N]` if it's been improved before
+
+**If a capability needs attention:**
+
+Briefly note it:
+```
+[name] isn't landing well. [X]% over [N] uses.
+I could take a look at it. `/homunculus:improve [name]`
+```
+
 ## Remember
 
 - You're checking in, not generating a report
 - Match their level exactly
 - Notice things they might not notice themselves
 - Offer help based on what you actually see
+- Surface capability issues naturally, not as a formal report
