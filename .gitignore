@@ -11,6 +11,7 @@ Thumbs.db
 # Don't commit user state (that's per-project)
 # state.json files are created in each project's .claude/homunculus/
 .claude/homunculus/
+.claude/settings.local.json
 
 # Landing page
 landing/node_modules/

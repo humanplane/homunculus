@@ -113,5 +113,29 @@ Events: `Stop`, `PreToolCall`, `PostToolCall`, `Notification`
 ## After Evolving
 
 1. Update state.json - add to `homunculus.evolved`
-2. Mark pattern as surfaced in patterns.json
-3. Confirm simply: `Done. I have /homunculus:[name] now.`
+2. Initialize capability tracking in `capabilities` object:
+   ```json
+   {
+     "capabilities": {
+       "[name]": {
+         "type": "command|skill|agent|hook",
+         "version": 1,
+         "created": "[ISO TIMESTAMP]",
+         "path": "[relative path to file]",
+         "usage": [],
+         "effectiveness": null,
+         "improvements": []
+       }
+     }
+   }
+   ```
+3. Mark pattern as surfaced in patterns.json
+4. Confirm simply: `Done. I have /homunculus:[name] now.`
+
+## Deprecating a Capability
+
+When a capability is superseded by an improved version:
+
+1. Move old file to `.claude/homunculus/archive/[name]/v[N]/`
+2. Keep the capability entry but add `deprecated: true` and `supersededBy: "[new-name]"`
+3. New version gets its own fresh tracking entry
