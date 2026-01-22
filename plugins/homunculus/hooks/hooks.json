@@ -2,12 +2,11 @@
   "hooks": {
     "UserPromptSubmit": [
       {
-        "matcher": "",
         "hooks": [
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/scripts/observe.sh prompt",
-            "timeout": 3000
+            "timeout": 3
           }
         ]
       }
@@ -19,19 +18,18 @@
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/scripts/observe.sh tool",
-            "timeout": 3000
+            "timeout": 3
           }
         ]
       }
     ],
     "Stop": [
       {
-        "matcher": "",
         "hooks": [
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/scripts/on_stop.sh",
-            "timeout": 10000
+            "timeout": 10
           }
         ]
       }
