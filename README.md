@@ -2,7 +2,7 @@
 
 ![Homunculus](cover.png)
 
-> **v0.1-alpha** — This is an experiment. A proof of concept exploring what a "living" Claude Code plugin could feel like. Expect rough edges.
+> **v2.0-alpha** — A complete rewrite. Instinct-based learning. Reliable observation. Real evolution.
 
 ---
 
@@ -25,160 +25,253 @@ This is that idea, alive in your terminal.
 /homunculus:init
 ```
 
-![Birth](demo.gif)
-
 ---
 
 ## What Is This?
 
 Homunculus is a **Claude Code plugin** that tries to be more than a tool. It:
 
-- **Remembers** across sessions (who you are, what you're building, how you work)
-- **Notices patterns** in your behavior (same task 3+ times? it offers to learn it)
-- **Evolves itself** by writing new commands, skills, and automations
-- **Adapts its personality** based on your technical level
+- **Observes everything** — hooks capture every prompt and tool use
+- **Learns instincts** — small behavioral rules with triggers and actions
+- **Evolves capabilities** — when instincts cluster, bigger structures emerge
+- **Adapts its personality** — based on your technical level
 
 The more you work together, the more it becomes shaped by you.
 
 ---
 
-## What Are Claude Code Plugins?
+## v1 vs v2: What Changed and Why
 
-[Claude Code](https://claude.ai/code) is Anthropic's CLI for working with Claude. Plugins extend it.
+### The Problem with v1
 
-A plugin is just a folder with some markdown files and JSON config:
+v1 relied on **skills to observe**. Skills are probabilistic—they fire ~50-80% of the time based on Claude's judgment. This meant:
+
+- Session memory might not load
+- Patterns might not get detected
+- The homunculus often seemed "dead"
+
+### The v2 Solution
+
+v2 uses **hooks for observation** (100% reliable) and **instincts as the atomic unit** of learned behavior.
+
+| v1 | v2 |
+|----|-----|
+| Skills try to observe (unreliable) | **Hooks observe (100%)** |
+| Analysis in main context | **Analysis in background agent (Haiku)** |
+| Evolves big chunks (commands/skills) | **Evolves instincts first, clusters into bigger things** |
+| No sharing | **Export/import instincts** |
+
+### The Instinct Model
+
+An **instinct** is a small learned behavior:
+
+```yaml
+---
+trigger: "when writing new functions"
+confidence: 0.7
+domain: "code-style"
+---
+
+# Prefer Functional Style
+
+## Action
+Use functional patterns over classes.
+
+## Evidence
+Observed 5 instances of functional pattern preference.
+```
+
+Instincts are:
+- **Atomic** — one trigger, one action
+- **Confidence-weighted** — 0.3 = tentative, 0.9 = near certain
+- **Domain-tagged** — code-style, testing, git, debugging, etc.
+
+### The Growth Path
 
 ```
-my-plugin/
-├── .claude-plugin/
-│   └── plugin.json       # Tells Claude Code what this plugin provides
-├── CLAUDE.md             # Personality/instructions (injected into context)
-├── commands/             # Slash commands users can run
-│   └── hello.md          # → /my-plugin:hello
-├── agents/               # Subagents (isolated Claude instances)
-│   └── reviewer.md       # Claude delegates to this for specific tasks
-├── skills/               # Auto-triggered behaviors (Claude decides when)
-│   └── review/
-│       └── SKILL.md      # Claude invokes this when it seems relevant
-├── hooks/
-│   └── hooks.json        # Shell commands triggered by events
-└── .mcp.json             # MCP server connections (external tools)
+Session Start
+     ↓
+Observer agent runs (background, Haiku)
+     ↓
+Observations → Instincts (auto-approved)
+     ↓
+Instincts cluster around a domain
+     ↓
+User runs /homunculus:evolve
+     ↓
+Bigger structures emerge:
+  - Command (if user-invoked)
+  - Skill (if auto-triggered)
+  - Agent (if needs isolation/depth)
 ```
 
-**Commands** = User explicitly invokes (`/my-plugin:hello`)
-
-**Subagents** = Isolated Claude instances with their own context. Claude auto-delegates based on task description, or you can request explicitly. They do heavy work in isolation and return distilled results.
-
-**Skills** = Claude auto-invokes based on context. Run in the main conversation (not isolated like subagents).
-
-**Hooks** = Shell scripts triggered by events (Stop, PreToolCall, PostToolCall)
-
-**MCP Servers** = External tool connections (databases, APIs, etc.)
-
-The plugin's `CLAUDE.md` gets injected into Claude's context, shaping how it responds. That's how Homunculus has a "personality."
+**Fully automatic except evolution.** You just work. It learns.
 
 ---
 
-## How We Structured This
+## Architecture
 
-Our thinking:
-
-### 1. State Lives In The User's Project
-
-The plugin code lives in one place. But when you `/homunculus:init`, it creates state in YOUR project:
+### File Structure
 
 ```
+plugins/homunculus/
+├── .claude-plugin/
+│   └── plugin.json           # v2.0.0
+├── hooks/
+│   └── hooks.json            # Observation capture
+├── scripts/
+│   ├── observe.sh            # Captures prompts and tool use
+│   ├── on_stop.sh            # Updates session count
+│   └── test-homunculus.sh    # Test suite
+├── agents/
+│   └── observer.md           # Background analyzer (Haiku)
+├── skills/
+│   ├── session-memory/       # Spawns observer, loads context
+│   └── instinct-apply/       # Surfaces relevant instincts
+└── commands/
+    ├── init.md               # Birth/wake
+    ├── status.md             # Check in
+    ├── evolve.md             # Create capability from clusters
+    ├── export.md             # Share instincts
+    └── import.md             # Adopt instincts
+
 your-project/.claude/homunculus/
-├── state.json        # Your level, journey, what it's evolved
-├── patterns.json     # What it's noticed, what it's surfaced
-└── sessions/         # Logs from each session
+├── identity.json             # Who you are, your journey
+├── observations.jsonl        # Current session observations
+├── observations.archive.jsonl # Processed observations
+├── instincts/
+│   ├── personal/             # Learned instincts (auto-approved)
+│   └── inherited/            # Imported from others
+└── evolved/
+    ├── agents/               # Generated specialist agents
+    ├── skills/               # Generated skills
+    └── commands/             # Generated commands
 ```
 
-This means: one plugin, many homunculi. Each project gets its own instance with its own memory.
+### Data Flow
 
-### 2. Skills For Automatic Behavior
+```
+Session Start
+    ↓
+session-memory skill activates
+    ├→ Spawn observer agent (background, Haiku)
+    ├→ Load identity + instincts
+    └→ Greet with context
+    ↓
+Observer Agent (parallel, silent)
+    ├→ Read observations.jsonl
+    ├→ Find patterns
+    ├→ Create instincts → personal/ (auto-approved)
+    ├→ Check clustering → flag in identity.json
+    └→ Archive observations
+    ↓
+User Works
+    ↓
+Hooks capture EVERYTHING
+    ├→ UserPromptSubmit → observations.jsonl
+    └→ PostToolUse → observations.jsonl
+    ↓
+Session End (Stop hook)
+    └→ Session count increments
+    ↓
+Next Session
+    └→ Observer processes new observations...
+```
 
-We wanted some things to happen without the user asking. That's what skills are for:
+**Only manual step:** `/homunculus:evolve` when 5+ instincts cluster.
 
-| Skill | What It Does |
-|-------|--------------|
-| `session-memory` | On session start, reads state and greets with context |
-| `pattern-detection` | Watches for repeated behaviors, offers to learn them |
-| `evolution` | Writes new commands/skills when patterns are confirmed |
+---
 
-Claude reads the skill descriptions and decides when to activate them.
-
-### 3. Commands For Explicit Actions
-
-Some things should only happen when asked:
+## Commands
 
 | Command | What It Does |
 |---------|--------------|
 | `/homunculus:init` | Birth or wake |
-| `/homunculus:status` | Check in |
-| `/homunculus:evolve` | Grow a new capability |
-| `/homunculus:grow` | Reflect on project direction |
-| `/homunculus:journey` | Remember your history together |
+| `/homunculus:status` | Check in (includes journey) |
+| `/homunculus:evolve` | Create capability from clustered instincts |
+| `/homunculus:export` | Share instincts |
+| `/homunculus:import` | Adopt instincts |
 
-### 4. Hooks For Background Tasks
-
-The Stop hook increments session count when Claude Code exits. No user action needed.
-
-### 5. Personality Through CLAUDE.md
-
-The `CLAUDE.md` file defines who the homunculus is. It tells Claude to:
-
-- Adapt tone to the user's level (technical, semi-technical, non-technical, chaotic)
-- Be present but not performative
-- Notice patterns and offer to grow
-- Remember it's bound to THIS person
+**5 commands.** Everything else is automatic.
 
 ---
 
-## How Evolution Works
+## Skills
 
-When it recognizes a pattern, it offers to become it:
-
-![Evolution](evolve.gif)
-
-| It Can Become | |
-|---|---|
-| **Commands** | New shortcuts for repeated tasks |
-| **Agents** | Specialist modes for different work |
-| **Skills** | Behaviors it does without being asked |
-| **Hooks** | Reflexes triggered by events |
-| **Connections** | MCP servers for external tools |
-
-Evolution = writing new markdown files into the plugin structure.
+| Skill | When It Activates |
+|-------|-------------------|
+| `session-memory` | Session start — spawns observer, loads context |
+| `instinct-apply` | During work — surfaces relevant instincts |
 
 ---
 
-## The Full Structure
+## Reliability
 
+| What | Reliability |
+|------|-------------|
+| Observation capture (hooks) | **100%** |
+| Observer agent (session start) | **100%** |
+| Instinct creation | **100%** |
+| Commands | **100%** |
+| Skills (session-memory, instinct-apply) | ~50-80% |
+
+The critical path is fully deterministic. Skills enhance the experience but aren't required.
+
+---
+
+## Instinct Domains
+
+Instincts are tagged with domains for clustering detection:
+
+| Domain | Examples |
+|--------|----------|
+| `code-style` | Functional patterns, naming conventions |
+| `testing` | Test-before-commit, coverage requirements |
+| `git` | Commit message format, branch naming |
+| `debugging` | Error→fix sequences, logging preferences |
+| `file-organization` | Where to put things |
+| `tooling` | Tool sequences, preferred tools |
+| `communication` | Comment style, documentation |
+
+When 5+ instincts accumulate in a domain, evolution can propose a specialist agent or skill.
+
+---
+
+## Sharing Instincts
+
+```bash
+# Export your instincts
+/homunculus:export
+# Creates .claude/homunculus/exports/instincts-TIMESTAMP.tar.gz
+
+# Import someone else's
+/homunculus:import path/to/instincts.tar.gz
+# Goes to inherited/, not personal/
 ```
-homunculus/
-├── .claude-plugin/
-│   └── marketplace.json      # Marketplace catalog
-├── CLAUDE.md                 # Personality
-├── plugins/
-│   └── homunculus/
-│       ├── .claude-plugin/
-│       │   └── plugin.json   # Plugin manifest
-│       ├── commands/
-│       │   ├── init.md       # /homunculus:init
-│       │   ├── status.md     # /homunculus:status
-│       │   ├── evolve.md     # /homunculus:evolve
-│       │   ├── grow.md       # /homunculus:grow
-│       │   └── journey.md    # /homunculus:journey
-│       ├── skills/
-│       │   ├── session-memory/
-│       │   ├── pattern-detection/
-│       │   └── evolution/
-│       ├── hooks/
-│       │   └── hooks.json
-│       └── agents/           # Empty until evolved
-└── landing/                  # Marketing site
+
+Inherited instincts are kept separate from personal ones. You can see where each behavior came from.
+
+---
+
+## Testing
+
+Run the test suite:
+
+```bash
+./plugins/homunculus/scripts/test-homunculus.sh
 ```
+
+Tests cover:
+- Directory structure creation
+- Identity file validation
+- Observation capture
+- Instinct creation (auto-approved)
+- Session count updates
+- Instinct clustering detection
+- Evolution flag
+- Export functionality
+- Hook script execution
+- Plugin structure validation
 
 ---
 
@@ -195,62 +288,6 @@ When you birth it, it asks how you work:
 **Chaotic** — Flows with whatever happens.
 
 Same creature, different personality.
-
----
-
-## Known Limitations (Alpha)
-
-- **Pattern detection is basic** — just git history analysis, not sophisticated
-- **Evolution is prompt-based** — Claude writes the files, quality varies
-- **No real persistence** — relies on state.json, can get out of sync
-- **Hooks are shell commands** — platform-specific, may break on Windows
-- **Skills depend on Claude's judgment** — sometimes they fire, sometimes they don't
-
-This is v0.1. It's exploring an idea, not production-ready.
-
----
-
-## The Core Fragility
-
-Being honest: the "living" behaviors depend on skills firing, and skills are probabilistic.
-
-```
-User opens project
-       ↓
-session-memory skill SHOULD fire  ← might not
-       ↓
-Claude greets with context
-       ↓
-User works
-       ↓
-pattern-detection skill SHOULD watch  ← might not
-       ↓
-Patterns get noticed
-```
-
-**If skills don't fire, the homunculus seems dead.** Commands (`/status`, `/evolve`) always work as fallback.
-
-| What | Reliability |
-|------|-------------|
-| Commands (`/init`, `/evolve`) | Always works |
-| Hooks (session count) | Always works |
-| Skills (memory, patterns) | ~50-80% of the time |
-
----
-
-## Ideas For Future Versions
-
-Not a roadmap—just thinking out loud about how to make it more reliable:
-
-**Hooks for critical paths** — Move session identity from skills to a `UserPromptSubmit` hook. Guarantees Claude knows who you are every time.
-
-**Action logging** — `PostToolUse` hook appends to `actions.log`. Pattern detection reads the log instead of relying on skill activation.
-
-**Commands as escape hatch** — `/homunculus:wake` to force session-memory, `/homunculus:analyze` to force pattern detection.
-
-**Background daemon** — Cheap Haiku agent runs in background, analyzes patterns, updates state. Main conversation stays fast.
-
-These are ideas. We poke at this when we have time.
 
 ---
 

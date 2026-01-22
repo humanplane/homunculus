@@ -1,12 +1,37 @@
 {
   "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/observe.sh prompt",
+            "timeout": 3000
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/observe.sh tool",
+            "timeout": 3000
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "matcher": "",
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'STATE=\".claude/homunculus/state.json\"; [ -f \"$STATE\" ] && command -v jq >/dev/null && { COUNT=$(jq -r \".journey.sessionCount // 0\" \"$STATE\"); TMP=$(mktemp); jq --arg c \"$((COUNT+1))\" --arg t \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\" \".journey.sessionCount = (\\$c|tonumber) | .journey.lastSession = \\$t\" \"$STATE\" > \"$TMP\" && mv \"$TMP\" \"$STATE\"; } || true'"
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/on_stop.sh",
+            "timeout": 10000
           }
         ]
       }

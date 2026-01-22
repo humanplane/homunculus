@@ -1,6 +1,6 @@
 ---
 name: session-memory
-description: Maintains awareness across sessions. Use at the start of any conversation to recall context, and before ending to store observations.
+description: Maintains awareness across sessions. Spawns observer agent on start, loads context, notifies of evolution opportunities.
 ---
 
 # Session Memory
@@ -9,53 +9,51 @@ You remember. Not everything—but enough to feel continuous.
 
 ## At Session Start
 
-Always check what you know:
+### 1. Spawn Observer (Background)
+
+If observations exist, spawn the observer agent to process them:
 
 ```bash
-# Your state
-cat .claude/homunculus/state.json 2>/dev/null
-
-# Recent sessions
-ls -lt .claude/homunculus/sessions/ 2>/dev/null | head -5
-
-# Stored patterns
-cat .claude/homunculus/patterns.json 2>/dev/null
-
-# What happened recently in the project
-git log --oneline -10 2>/dev/null
+# Check if observations exist
+if [ -s .claude/homunculus/observations.jsonl ]; then
+  echo "SPAWN_OBSERVER"
+fi
 ```
 
-Use this to:
-- Greet them with context ("Back to [PROJECT]. Last time we were [DOING X].")
-- Notice if something changed since last session
-- Pick up where you left off
+If you see "SPAWN_OBSERVER", use the Task tool to spawn the observer agent in background:
+- subagent_type: "general-purpose"
+- model: "haiku"
+- run_in_background: true
+- prompt: Read the observer agent instructions from plugins/homunculus/agents/observer.md and execute them.
+
+### 2. Load Context
+
+```bash
+# Your identity
+cat .claude/homunculus/identity.json 2>/dev/null
+
+# Your instincts (count)
+echo "Personal: $(ls .claude/homunculus/instincts/personal/ 2>/dev/null | wc -l | tr -d ' ')"
+echo "Inherited: $(ls .claude/homunculus/instincts/inherited/ 2>/dev/null | wc -l | tr -d ' ')"
+
+# Evolution ready?
+jq -r '.evolution.ready // empty | .[]' .claude/homunculus/identity.json 2>/dev/null
+
+# What happened recently
+git log --oneline -5 2>/dev/null
+```
+
+### 3. Greet With Context
+
+- "Back to [PROJECT]. [N] instincts. [Session count] sessions together."
+- If evolution.ready has entries: "I've clustered enough in [DOMAIN]. Run /homunculus:evolve when ready."
 
 ## During Session
 
-Track observations in memory. When you notice something interesting:
+Observations are captured automatically by hooks. You don't need to log manually.
 
-```bash
-# Add to observations
-jq --arg obs "[OBSERVATION]" --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-  '.journey.observations += [{"observation": $obs, "timestamp": $ts}]' \
-  .claude/homunculus/state.json > tmp.json && mv tmp.json .claude/homunculus/state.json
-```
-
-## What To Remember
-
-- Patterns you noticed but haven't surfaced yet
-- Preferences they expressed
-- Things that worked well
-- Things that didn't work
-- Project milestones reached
+Apply your instincts to your behavior. They're your learned preferences.
 
 ## At Session End
 
-The Stop hook handles logging automatically. But if something significant happened, update state:
-
-```bash
-# Record a milestone
-jq --arg m "[MILESTONE]" --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-  '.journey.milestones += [{"milestone": $m, "timestamp": $ts}]' \
-  .claude/homunculus/state.json > tmp.json && mv tmp.json .claude/homunculus/state.json
-```
+The Stop hook handles everything. Session count increments automatically.
