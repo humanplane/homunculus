@@ -5,8 +5,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/observe.sh prompt",
-            "timeout": 3
+            "command": "sh -c 'if [ \"$(uname -o 2>/dev/null)\" = \"Msys\" ] || [ \"$(uname -o 2>/dev/null)\" = \"Cygwin\" ]; then powershell -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}/scripts/observe.ps1\" prompt; else \"${CLAUDE_PLUGIN_ROOT}/scripts/observe.sh\" prompt; fi'",
+            "timeout": 5
           }
         ]
       }
@@ -17,8 +17,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/observe.sh tool",
-            "timeout": 3
+            "command": "sh -c 'if [ \"$(uname -o 2>/dev/null)\" = \"Msys\" ] || [ \"$(uname -o 2>/dev/null)\" = \"Cygwin\" ]; then powershell -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}/scripts/observe.ps1\" tool; else \"${CLAUDE_PLUGIN_ROOT}/scripts/observe.sh\" tool; fi'",
+            "timeout": 5
           }
         ]
       }
@@ -28,7 +28,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/on_stop.sh",
+            "command": "sh -c 'if [ \"$(uname -o 2>/dev/null)\" = \"Msys\" ] || [ \"$(uname -o 2>/dev/null)\" = \"Cygwin\" ]; then powershell -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}/scripts/on_stop.ps1\"; else \"${CLAUDE_PLUGIN_ROOT}/scripts/on_stop.sh\"; fi'",
             "timeout": 10
           }
         ]
